@@ -23,10 +23,17 @@ The easiest use-case is to first run the inference on the pre-processed TCIA mul
 - run the provided pre-processing scripts (will be uploaded shortly)
 - make sure your conda/pip3 pytorch install is up to date (v1.0) and you have a GPU installed 
 - download this repo and run
-python inference.py -dataset tcia -fold 1 -model obeliskhybrid -input pancreas_ct20.nii.gz -output mylabel_ct20.nii.gz
+python 
+```
+inference.py -dataset tcia -fold 1 -model obeliskhybrid -input pancreas_ct1.nii.gz -output mylabel_ct1.nii.gz
+```
 Note that the folds are defined as follows: fold 1 has not seen labels/scans #1-#10, fold 2 has not seen labels #11-#22 etc.
 - you can now visualise the outcome in ITK Snap or measure the Dice overlap of the pancreas with the manual segmentation
+```
 c3d label_ct1.nii.gz mylabel_ct1.nii.gz -overlap 2
-which should return 0.634
+```
+which should return 0.634 and a visual segmentation like below
 
 <img src="itk_snapshot_pancreas_ct1.png" alt="ITK visualisation of automatic segmentation"/>
+
+- you can later train your own models using the train.py function by providing the respective datafolders 
