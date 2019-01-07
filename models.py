@@ -228,5 +228,362 @@ class obeliskhybrid_tcia(nn.Module):
         x = self.conv77U(x)
         
         return x
+    
+    
+class globalfcnet_tcia(nn.Module):
+
+    def __init__(self, num_labels):
+
+        super(globalfcnet_tcia, self).__init__()
+
+        # # 1) parameterintensive Unet with 2 global FC-Layer [16mio parameters]
+
+        self.conv0 = nn.Conv3d(1, 5, 3, padding=1)
+        self.batch0 = nn.BatchNorm3d(5)
+
+        self.conv1 = nn.Conv3d(5, 10, 3, stride=2, padding=1)
+        self.batch1 = nn.BatchNorm3d(10)
+        self.conv11 = nn.Conv3d(10, 10, 3, padding=1)
+        self.batch11 = nn.BatchNorm3d(10)
+
+        self.conv2 = nn.Conv3d(10, 30, 3, stride=2, padding=1)
+        self.batch2 = nn.BatchNorm3d(30)
+        self.conv22 = nn.Conv3d(30, 30, 3, padding=1)
+        self.batch22 = nn.BatchNorm3d(30)
+
+        self.conv3 = nn.Conv3d(30, 50, 3, stride=2, padding=1)
+        self.batch3 = nn.BatchNorm3d(50)
+        self.conv33 = nn.Conv3d(50, 50, 3, padding=1)
+        self.batch33 = nn.BatchNorm3d(50)
+
+        self.conv4 = nn.Conv3d(50, 20, 3, stride=2, padding=1)
+        self.batch4 = nn.BatchNorm3d(20)
+        self.conv44 = nn.Conv3d(20, 20, 3, padding=1)
+        self.batch44 = nn.BatchNorm3d(20)
+
+        self.fc1 = nn.Linear(20 * 9 * 9 * 9, 400)
+
+        self.fc2U = nn.Linear(400, 20 * 9 * 9 * 9)
+
+        self.conv6dU = nn.Conv3d(40, 20, 3, padding=1)
+        self.batch6dU = nn.BatchNorm3d(20)
+
+        self.conv6cU = nn.Conv3d(70, 20, 3, padding=1)
+        self.batch6cU = nn.BatchNorm3d(20)
+
+        self.conv6bU = nn.Conv3d(50, 10, 3, padding=1)
+        self.batch6bU = nn.BatchNorm3d(10)
+
+        self.conv6U = nn.Conv3d(20, 8, 3, padding=1)
+        self.batch6U = nn.BatchNorm3d(8)
+
+        self.conv7U = nn.Conv3d(13, num_labels, 3, padding=1)
+        self.batch7U = nn.BatchNorm3d(num_labels)
+        self.conv77U = nn.Conv3d(num_labels, num_labels, 3, padding=1)
+  
+    def forward(self, inputImg):
+
+        # 1) forward for global Unet [16mio parameters]
+        x1 = F.leaky_relu(self.batch0(self.conv0(inputImg)), 0.1)
+
+        x = F.leaky_relu(self.batch1(self.conv1(x1)),0.1)
+        x2 = F.leaky_relu(self.batch11(self.conv11(x)),0.1)
+
+        x = F.leaky_relu(self.batch2(self.conv2(x2)),0.1)
+        x3 = F.leaky_relu(self.batch22(self.conv22(x)),0.1)
+
+        x = F.leaky_relu(self.batch3(self.conv3(x3)),0.1)
+        x4 = F.leaky_relu(self.batch33(self.conv33(x)),0.1)
+
+        x = F.leaky_relu(self.batch4(self.conv4(x4)),0.1)
+        x5 = F.leaky_relu(self.batch44(self.conv44(x)),0.1)
+
+        sizeX = x5.size()
+        x = x5.view(-1, 20 * 9 * 9 * 9)
+        x = self.fc1(x)
+        x = F.dropout(x, training=self.training)
+
+        x = self.fc2U(x)
+        x = F.dropout(x, training=self.training)
+        x = x.view(sizeX)
+
+        x = F.leaky_relu(self.batch6dU(self.conv6dU(torch.cat((x,x5),1))),0.1)
+
+        x = F.interpolate(x, size=[18,18,18], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch6cU(self.conv6cU(torch.cat((x,x4),1))),0.1)
+
+        x = F.interpolate(x, size=[36,36,36], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch6bU(self.conv6bU(torch.cat((x,x3),1))),0.1)
+
+        x = F.interpolate(x, size=[72,72,72], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch6U(self.conv6U(torch.cat((x,x2),1))),0.1)
+
+        x = F.interpolate(x, size=[144,144,144], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch7U(self.conv7U(torch.cat((x,x1),1))),0.1)
+        # x = F.sigmoid(self.conv77U(x))
+        x = self.conv77U(x)
+        
+        return x
 
 
+class allconvunet_tcia(nn.Module):
+
+    def __init__(self, num_labels):
+
+        super(allconvunet_tcia, self).__init__()
+
+
+        # # 4) Deeper classic all-conv.-Unet [880k parameters]
+        self.conv0 = nn.Conv3d(1, 5, 3, padding=1)
+        self.batch0 = nn.BatchNorm3d(5)
+
+        self.conv1 = nn.Conv3d(5, 14, 3, stride=2, padding=1)
+        self.batch1 = nn.BatchNorm3d(14)
+        self.conv11 = nn.Conv3d(14, 14, 3, padding=1)
+        self.batch11 = nn.BatchNorm3d(14)
+
+        self.conv2 = nn.Conv3d(14, 28, 3, stride=2, padding=1)
+        self.batch2 = nn.BatchNorm3d(28)
+        self.conv22 = nn.Conv3d(28, 28, 3, padding=1)
+        self.batch22 = nn.BatchNorm3d(28)
+
+        self.conv3 = nn.Conv3d(28, 42, 3, stride=2, padding=1)
+        self.batch3 = nn.BatchNorm3d(42)
+        self.conv33 = nn.Conv3d(42, 42, 3, padding=1)
+        self.batch33 = nn.BatchNorm3d(42)
+
+        self.conv4 = nn.Conv3d(42, 56, 3, stride=2, padding=1)
+        self.batch4 = nn.BatchNorm3d(56)
+        self.conv44 = nn.Conv3d(56, 56, 3, padding=1)
+        self.batch44 = nn.BatchNorm3d(56)
+
+        self.conv5 = nn.Conv3d(56, 70, 3, stride=2, padding=1)
+        self.batch5 = nn.BatchNorm3d(70)
+        self.conv55 = nn.Conv3d(70, 70, 3, padding=1)
+        self.batch55 = nn.BatchNorm3d(70)
+
+        self.conv6dU = nn.Conv3d(126, 56, 3, padding=1)
+        self.batch6dU = nn.BatchNorm3d(56)
+
+        self.conv6cU = nn.Conv3d(98, 42, 3, padding=1)
+        self.batch6cU = nn.BatchNorm3d(42)
+
+        self.conv6bU = nn.Conv3d(70, 28, 3, padding=1)
+        self.batch6bU = nn.BatchNorm3d(28)
+
+        self.conv6U = nn.Conv3d(42, 14, 3, padding=1)
+        self.batch6U = nn.BatchNorm3d(14)
+
+        self.conv7U = nn.Conv3d(19, num_labels, 3, padding=1)
+        self.batch7U = nn.BatchNorm3d(num_labels)
+        self.conv77U = nn.Conv3d(num_labels, num_labels, 3, padding=1)
+    
+
+    def forward(self, inputImg):
+
+        # # 3) forward for classical deeper all-conv.-Unet [880k parameters] + dropout
+        x1 = F.dropout3d(F.leaky_relu(self.batch0(self.conv0(inputImg)), 0.1))
+
+        x = F.dropout3d(F.leaky_relu(self.batch1(self.conv1(x1)),0.1))
+        x2 = F.dropout3d(F.leaky_relu(self.batch11(self.conv11(x)),0.1))
+
+        x = F.dropout3d(F.leaky_relu(self.batch2(self.conv2(x2)),0.1))
+        x3 = F.dropout3d(F.leaky_relu(self.batch22(self.conv22(x)),0.1))
+
+        x = F.dropout3d(F.leaky_relu(self.batch3(self.conv3(x3)),0.1))
+        x4 = F.dropout3d(F.leaky_relu(self.batch33(self.conv33(x)),0.1))
+
+        x = F.dropout3d(F.leaky_relu(self.batch4(self.conv4(x4)),0.1))
+        x5 = F.dropout3d(F.leaky_relu(self.batch44(self.conv44(x)),0.1))
+
+        x = F.dropout3d(F.leaky_relu(self.batch5(self.conv5(x5)),0.1))
+        x = F.dropout3d(F.leaky_relu(self.batch55(self.conv55(x)),0.1))
+
+        x = F.interpolate(x, size=[9,9,9], mode='trilinear', align_corners=False)
+        x = F.dropout3d(F.leaky_relu(self.batch6dU(self.conv6dU(torch.cat((x,x5),1))),0.1))
+
+        x = F.interpolate(x, size=[18,18,18], mode='trilinear', align_corners=False)
+        x = F.dropout3d(F.leaky_relu(self.batch6cU(self.conv6cU(torch.cat((x,x4),1))),0.1))
+
+        x = F.interpolate(x, size=[36,36,36], mode='trilinear', align_corners=False)
+        x = F.dropout3d(F.leaky_relu(self.batch6bU(self.conv6bU(torch.cat((x,x3),1))),0.1))
+
+        x = F.interpolate(x, size=[72,72,72], mode='trilinear', align_corners=False)
+        x = F.dropout3d(F.leaky_relu(self.batch6U(self.conv6U(torch.cat((x,x2),1))),0.1))
+
+        x = F.interpolate(x, size=[144,144,144], mode='trilinear', align_corners=False)
+        x = F.dropout3d(F.leaky_relu(self.batch7U(self.conv7U(torch.cat((x,x1),1))),0.1))
+
+        x = self.conv77U(x)
+
+        return x
+
+class globalfcnet_visceral(nn.Module):
+
+    def __init__(self):
+
+        super(globalfcnet_visceral, self).__init__()
+
+        self.conv0 = nn.Conv3d(1, 5, 3, padding=1)
+        self.batch0 = nn.BatchNorm3d(5)
+
+        self.conv1 = nn.Conv3d(5, 10, 3, stride=2, padding=1)
+        self.batch1 = nn.BatchNorm3d(10)
+        self.conv11 = nn.Conv3d(10, 10, 3, padding=1)
+        self.batch11 = nn.BatchNorm3d(10)
+
+        self.conv2 = nn.Conv3d(10, 30, 3, stride=2, padding=1)
+        self.batch2 = nn.BatchNorm3d(30)
+        self.conv22 = nn.Conv3d(30, 30, 3, padding=1)
+        self.batch22 = nn.BatchNorm3d(30)
+
+        self.conv3 = nn.Conv3d(30, 50, 3, stride=2, padding=1)
+        self.batch3 = nn.BatchNorm3d(50)
+        self.conv33 = nn.Conv3d(50, 50, 3, padding=1)
+        self.batch33 = nn.BatchNorm3d(50)
+
+        self.conv4 = nn.Conv3d(50, 20, 3, stride=2, padding=1)
+        self.batch4 = nn.BatchNorm3d(20)
+        self.conv44 = nn.Conv3d(20, 20, 3, padding=1)
+        self.batch44 = nn.BatchNorm3d(20)
+
+        self.fc1 = nn.Linear(20 * 10 * 8 * 10, 400)
+
+        self.fc2U = nn.Linear(400, 20 * 10 * 8 * 10)
+
+        self.conv6dU = nn.Conv3d(40, 20, 3, padding=1)
+        self.batch6dU = nn.BatchNorm3d(20)
+
+        self.conv6cU = nn.Conv3d(70, 20, 3, padding=1)
+        self.batch6cU = nn.BatchNorm3d(20)
+
+        self.conv6bU = nn.Conv3d(50, 10, 3, padding=1)
+        self.batch6bU = nn.BatchNorm3d(10)
+
+        self.conv6U = nn.Conv3d(20, 8, 3, padding=1)
+        self.batch6U = nn.BatchNorm3d(8)
+
+        self.conv7U = nn.Conv3d(13, 8, 3, padding=1)
+        self.batch7U = nn.BatchNorm3d(8)
+        self.conv77U = nn.Conv3d(8, 8, 3, padding=1)
+
+
+
+
+    def forward(self, inputImg):
+
+        x1 = F.leaky_relu(self.batch0(self.conv0(inputImg)), 0.1)
+
+        x = F.leaky_relu(self.batch1(self.conv1(x1)),0.1)
+        x2 = F.leaky_relu(self.batch11(self.conv11(x)),0.1)
+
+        x = F.leaky_relu(self.batch2(self.conv2(x2)),0.1)
+        x3 = F.leaky_relu(self.batch22(self.conv22(x)),0.1)
+
+        x = F.leaky_relu(self.batch3(self.conv3(x3)),0.1)
+        x4 = F.leaky_relu(self.batch33(self.conv33(x)),0.1)
+
+        x = F.leaky_relu(self.batch4(self.conv4(x4)),0.1)
+        x5 = F.leaky_relu(self.batch44(self.conv44(x)),0.1)
+
+        sizeX = x5.size()
+        x = x5.view(-1, 20 * 10 * 8 * 10)
+        x = self.fc1(x)
+        x = F.dropout(x, training=self.training)
+
+        xU = self.fc2U(x)
+        xU = F.dropout(xU, training=self.training)
+        xU = xU.view(sizeX)
+
+        xU = F.leaky_relu(self.batch6dU(self.conv6dU(torch.cat((xU,x5),1))),0.1)
+
+        xU = F.interpolate(xU, size=[20,15,20], mode='trilinear', align_corners=False)
+        xU = F.leaky_relu(self.batch6cU(self.conv6cU(torch.cat((xU,x4),1))),0.1)
+
+        xU = F.interpolate(xU, size=[39,29,40], mode='trilinear', align_corners=False)
+        xU = F.leaky_relu(self.batch6bU(self.conv6bU(torch.cat((xU,x3),1))),0.1)
+
+        xU = F.interpolate(xU, size=[78,58,80], mode='trilinear', align_corners=False)
+        xU = F.leaky_relu(self.batch6U(self.conv6U(torch.cat((xU,x2),1))),0.1)
+
+        xU = F.interpolate(xU, size=[156,115,160], mode='trilinear', align_corners=False)
+        xU = F.leaky_relu(self.batch7U(self.conv7U(torch.cat((xU,x1),1))),0.1)
+        # xU = F.sigmoid(self.conv77U(xU))
+        xU = self.conv77U(xU)
+
+        return xU
+    
+class allconvunet_visceral(nn.Module):
+
+    def __init__(self):
+
+        super(allconvunet_visceral, self).__init__()
+
+        self.conv0 = nn.Conv3d(1, 5, 3, padding=1)
+        self.batch0 = nn.BatchNorm3d(5)
+
+        self.conv1 = nn.Conv3d(5, 16, 3, stride=2, padding=1)
+        self.batch1 = nn.BatchNorm3d(16)
+        self.conv11 = nn.Conv3d(16, 16, 3, padding=1)
+        self.batch11 = nn.BatchNorm3d(16)
+
+        self.conv2 = nn.Conv3d(16, 32, 3, stride=2, padding=1)
+        self.batch2 = nn.BatchNorm3d(32)
+        self.conv22 = nn.Conv3d(32, 32, 3, padding=1)
+        self.batch22 = nn.BatchNorm3d(32)
+
+        self.conv3 = nn.Conv3d(32, 64, 3, stride=2, padding=1)
+        self.batch3 = nn.BatchNorm3d(64)
+        self.conv33 = nn.Conv3d(64, 64, 3, padding=1)
+        self.batch33 = nn.BatchNorm3d(64)
+
+        self.conv4 = nn.Conv3d(64, 80, 3, stride=2, padding=1)
+        self.batch4 = nn.BatchNorm3d(80)
+        self.conv44 = nn.Conv3d(80, 80, 3, padding=1)
+        self.batch44 = nn.BatchNorm3d(80)
+
+        self.conv6cU = nn.Conv3d(144, 64, 3, padding=1)
+        self.batch6cU = nn.BatchNorm3d(64)
+
+        self.conv6bU = nn.Conv3d(96, 32, 3, padding=1)
+        self.batch6bU = nn.BatchNorm3d(32)
+
+        self.conv6U = nn.Conv3d(48, 8, 3, padding=1)
+        self.batch6U = nn.BatchNorm3d(8)
+
+        self.conv7U = nn.Conv3d(13, 8, 3, padding=1)
+        self.batch7U = nn.BatchNorm3d(8)
+        self.conv77U = nn.Conv3d(8, 8, 3, padding=1)
+
+
+    def forward(self, inputImg):
+
+        x1 = F.leaky_relu(self.batch0(self.conv0(inputImg)), 0.1)
+
+        x = F.leaky_relu(self.batch1(self.conv1(x1)),0.1)
+        x2 = F.leaky_relu(self.batch11(self.conv11(x)),0.1)
+
+        x = F.leaky_relu(self.batch2(self.conv2(x2)),0.1)
+        x3 = F.leaky_relu(self.batch22(self.conv22(x)),0.1)
+
+        x = F.leaky_relu(self.batch3(self.conv3(x3)),0.1)
+        x4 = F.leaky_relu(self.batch33(self.conv33(x)),0.1)
+
+        x = F.leaky_relu(self.batch4(self.conv4(x4)),0.1)
+        x = F.leaky_relu(self.batch44(self.conv44(x)),0.1)
+
+        x = F.interpolate(x, size=[20,15,20], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch6cU(self.conv6cU(torch.cat((x,x4),1))),0.1)
+
+        x = F.interpolate(x, size=[39,29,40], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch6bU(self.conv6bU(torch.cat((x,x3),1))),0.1)
+
+        x = F.interpolate(x, size=[78,58,80], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch6U(self.conv6U(torch.cat((x,x2),1))),0.1)
+
+        x = F.interpolate(x, size=[156,115,160], mode='trilinear', align_corners=False)
+        x = F.leaky_relu(self.batch7U(self.conv7U(torch.cat((x,x1),1))),0.1)
+        # x = F.sigmoid(self.conv77U(xU))
+        x = self.conv77U(x)
+
+        return x

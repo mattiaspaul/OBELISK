@@ -15,7 +15,7 @@ import argparse
 cuda_idx = 0
 
 from utils import init_weights, countParam, augmentAffine, my_ohem, dice_coeff
-from models import obeliskhybrid_tcia, obeliskhybrid_visceral
+from models import *#obeliskhybrid_tcia, obeliskhybrid_visceral
 
 
 #import matplotlib
@@ -38,19 +38,30 @@ def main():
 
     options = parser.parse_args()
     d_options = vars(options)
-    modelname = split_at(d_options['model'], '_', 1)[0]
+    modelfilename = os.path.basename(d_options['model'])
+    modelname = split_at(modelfilename, '_', 1)[0]
     print('input CT image',d_options['input'],'\n   and model name',modelname,'for dataset',d_options['dataset'])
     
     img_val =  torch.from_numpy(nib.load(d_options['input']).get_data()).float().unsqueeze(0).unsqueeze(0)
     
     load_successful = False
-    if((modelname=='obeliskhybrid')&(d_options['dataset']=='tcia')):
-        net = obeliskhybrid_tcia(9) #has 8 anatomical foreground labels
-        net.load_state_dict(torch.load(d_options['model']))
-        img_val = img_val/1024.0 + 1.0 #scale data
-        load_successful = True
+    if(d_options['dataset']=='tcia'):
+        if(modelname=='obeliskhybrid'):
+            img_val = img_val/1024.0 + 1.0 #scale data
+            net = obeliskhybrid_tcia(9) #has 8 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
+        if(modelname=='allconvunet'):
+            #no scaling done for unet models
+            net = allconvunet_tcia(9) #has 8 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
+        if(modelname=='globalfcnet'):
+            net = globalfcnet_tcia(9) #has 8 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
 
-    if((modelname=='obeliskhybrid')&(d_options['dataset']=='visceral')):
+    if(d_options['dataset']=='visceral'):
         img_val = img_val/1000.0
         _,_,D_in0,H_in0,W_in0 = img_val.size()
         with torch.no_grad():
@@ -58,9 +69,19 @@ def main():
             img_val = F.avg_pool3d(img_val,3,padding=1,stride=2)
         _,_,D_in1,H_in1,W_in1 = img_val.size()
         full_res = torch.Tensor([D_in1,H_in1,W_in1]).long()
-        net = obeliskhybrid_visceral(8,full_res) #has 7 anatomical foreground labels
-        net.load_state_dict(torch.load(d_options['model']))
-        load_successful = True
+        if(modelname=='obeliskhybrid'):
+            net = obeliskhybrid_visceral(8,full_res) #has 7 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
+        if(modelname=='allconvunet'):
+            net = allconvunet_visceral() #has 7 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
+        if(modelname=='globalfcnet'):
+            net = globalfcnet_visceral() #has 7 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
+        
 
     if(load_successful):
         print('read in model with',countParam(net),'parameters')
