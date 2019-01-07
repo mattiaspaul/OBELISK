@@ -32,7 +32,7 @@ Note that the folds are defined as follows: fold 1 has not seen labels/scans #1-
 ```
 c3d label_ct1.nii.gz mylabel_ct1.nii.gz -overlap 2
 ```
-which should return 0.634 and a visual segmentation like below
+which should return 0.783 and a visual segmentation like below
 
 <img src="itk_snapshot_pancreas_ct1.png" alt="ITK visualisation of automatic segmentation"/>
 
