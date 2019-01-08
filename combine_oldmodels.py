@@ -20,9 +20,9 @@ foldNo = int(sys.argv[1])
 from utils import init_weights, countParam, augmentAffine, my_ohem, dice_coeff
 from models import *#obeliskhybrid_tcia, obeliskhybrid_visceral
 
-pth = torch.load('midl_augment2net_obelisk'+str(foldNo)+'.pth')
+pth = torch.load('midl_augment_net_obelisk'+str(foldNo)+'.pth')
 full_res = torch.Tensor([156,115,160]).long(); net = obelisk_visceral(8,full_res)
-pth_off = torch.load('midl_augment2offset_obelisk'+str(foldNo)+'.pth')
+pth_off = torch.load('midl_augment_offset_obelisk'+str(foldNo)+'.pth')
 offset1 = pth_off['xyz_off.weight'].permute(1,0).contiguous().view(1,1024,1,2,3).flip(4)
 #>>> print(pth_off['xyz_off.weight'].size())
 #torch.Size([6, 1024])
