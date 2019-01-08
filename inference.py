@@ -62,22 +62,31 @@ def main():
             load_successful = True
 
     if(d_options['dataset']=='visceral'):
-        img_val = img_val/1000.0
         _,_,D_in0,H_in0,W_in0 = img_val.size()
-        with torch.no_grad():
-            #subsample by factor of 2 (higher resolution in our original data)
-            img_val = F.avg_pool3d(img_val,3,padding=1,stride=2)
-        _,_,D_in1,H_in1,W_in1 = img_val.size()
-        full_res = torch.Tensor([D_in1,H_in1,W_in1]).long()
         if(modelname=='obeliskhybrid'):
+            img_val = img_val/1000.0
+            with torch.no_grad():
+            #subsample by factor of 2 (higher resolution in our original data)
+                img_val = F.avg_pool3d(img_val,3,padding=1,stride=2)
+            _,_,D_in1,H_in1,W_in1 = img_val.size()
+            full_res = torch.Tensor([D_in1,H_in1,W_in1]).long()
             net = obeliskhybrid_visceral(8,full_res) #has 7 anatomical foreground labels
             net.load_state_dict(torch.load(d_options['model']))
             load_successful = True
         if(modelname=='obelisk'):
+            img_val = img_val/500.0
+            img_val = F.avg_pool3d(img_val,5,stride=1,padding=2)
+            img_val = F.avg_pool3d(img_val,5,stride=1,padding=2)
+            img_val = F.avg_pool3d(img_val,3,stride=1,padding=1)
+            _,_,D_in1,H_in1,W_in1 = img_val.size()
+            full_res = torch.Tensor([D_in1,H_in1,W_in1]).long()
             net = obelisk_visceral(8,full_res) #has 7 anatomical foreground labels
             net.load_state_dict(torch.load(d_options['model']))
             load_successful = True
         if(modelname=='allconvunet'):
+            with torch.no_grad():
+            #subsample by factor of 2 (higher resolution in our original data)
+                img_val = F.avg_pool3d(img_val,3,padding=1,stride=2)
             net = allconvunet_visceral() #has 7 anatomical foreground labels
             net.load_state_dict(torch.load(d_options['model']))
             load_successful = True

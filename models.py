@@ -251,7 +251,7 @@ class obelisk_visceral(nn.Module):
         # sample_grid: 1 x    1     x #samples x 1 x 3
         # offsets:     1 x #offsets x     1    x 1 x 3
         
-        self.sample_grid1 = F.affine_grid(torch.eye(3,4).unsqueeze(0),torch.Size((1,1,half_res[0],half_res[1],half_res[2])))
+        self.sample_grid1 = F.affine_grid(torch.eye(3,4).unsqueeze(0),torch.Size((1,1,quarter_res[0],quarter_res[1],quarter_res[2])))
         self.sample_grid1.requires_grad = False
         
         #in this model (binary-variant) two spatial offsets are paired 
@@ -281,12 +281,12 @@ class obelisk_visceral(nn.Module):
         if(sample_grid is None):
             sample_grid = self.sample_grid1
         sample_grid = sample_grid.to(inputImg.device)    
-        #pre-smooth image (when not using any prior convolutions)
-        x00 = F.avg_pool3d(inputImg,3,padding=1,stride=1)
+        #pre-smooth image (has to be done in advance for original models )
+        #x00 = F.avg_pool3d(inputImg,3,padding=1,stride=1)
         
         _,D_grid,H_grid,W_grid,_ = sample_grid.size()
-        input = F.grid_sample(x00, (sample_grid.view(1,1,-1,1,3).repeat(B,1,1,1,1) + self.offset1[:,:,:,0:1,:])).view(B,-1,D_grid,H_grid,W_grid)-\
-        F.grid_sample(x00, (sample_grid.view(1,1,-1,1,3).repeat(B,1,1,1,1) + self.offset1[:,:,:,1:2,:])).view(B,-1,D_grid,H_grid,W_grid)
+        input = F.grid_sample(inputImg, (sample_grid.view(1,1,-1,1,3).repeat(B,1,1,1,1) + self.offset1[:,:,:,0:1,:])).view(B,-1,D_grid,H_grid,W_grid)-\
+        F.grid_sample(inputImg, (sample_grid.view(1,1,-1,1,3).repeat(B,1,1,1,1) + self.offset1[:,:,:,1:2,:])).view(B,-1,D_grid,H_grid,W_grid)
         
         x1 = F.relu(self.BN1(self.LIN1(input)))
         x2 = self.BN2(self.LIN2(x1))
@@ -298,7 +298,7 @@ class obelisk_visceral(nn.Module):
 
         x4 = self.LIN4(self.BN3d(x3d))
         #return half-resolution segmentation/prediction 
-        return F.interpolate(x4, size=[self.full_res[0],self.full_res[1],self.full_res[2]], mode='trilinear',align_corners=False)
+        return F.interpolate(x4, size=[self.half_res[0],self.half_res[1],self.half_res[2]], mode='trilinear',align_corners=False)
 
 
 
@@ -659,3 +659,6 @@ class allconvunet_visceral(nn.Module):
         x = self.conv77U(x)
 
         return x
+    
+    
+    
