@@ -30,7 +30,7 @@ def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-dataset ", dest="dataset", help="either tcia or visceral", default='tcia', required=True)
-    parser.add_argument("-fold", dest="fold", help="number of training fold", default=1, required=True)
+    #parser.add_argument("-fold", dest="fold", help="number of training fold", default=1, required=True)
     parser.add_argument("-model", dest="model", help="filename of pytorch pth model", default='obeliskhybrid', required=True)
     parser.add_argument("-input", dest="input",  help="nii.gz CT volume to segment", required=True)
     parser.add_argument("-output", dest="output",  help="nii.gz label output prediction", default=None, required=True)
