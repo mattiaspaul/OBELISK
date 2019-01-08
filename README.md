@@ -28,7 +28,7 @@ The easiest use-case is to first run the inference on the pre-processed TCIA mul
 - download this repo and run
 python 
 ```
-inference.py -dataset tcia -fold 1 -model obeliskhybrid -input pancreas_ct1.nii.gz -output mylabel_ct1.nii.gz
+inference.py -dataset tcia -model obeliskhybrid -input pancreas_ct1.nii.gz -output mylabel_ct1.nii.gz
 ```
 Note that the folds are defined as follows: fold 1 has not seen labels/scans #1-#10, fold 2 has not seen labels #11-#21 etc.
 - you can now visualise the outcome in ITK Snap or measure the Dice overlap of the pancreas with the manual segmentation
