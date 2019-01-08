@@ -6,7 +6,10 @@ OBELISK-Net: Fewer Layers to Solve 3D Multi-Organ Segmentation with Sparse Defor
 by Mattias P. Heinrich, Ozan Oktay, Nassim Bouteldja 
 (winner of the MIDL 2018 best paper award)
 
-The main idea of OBELISK is to learn a large spatially deformable filter kernel for (3D) image analysis. It replaces a conventional (say 5x5) convolution with 1) trainable spatial filter offsets xy(z)-coordinates and 2) a linear 1x1 convolution that contains the filter coefficients (values). During training OBELISK will adapt its receptive field to the given problem in a completely data-driven manner and thus automatically solve many tuning steps that are usually done by 'network engineering'. The OBELISK layers have substantially fewer trainable parameters than conventional CNNs used in 3D U-Nets and perform often better for medical segmentation tasks.
+The main idea of OBELISK is to learn a large spatially deformable filter kernel for (3D) image analysis. It replaces a conventional (say 5x5) convolution with 
+1) trainable spatial filter offsets xy(z)-coordinates and 
+2) a linear 1x1 convolution that contains the filter coefficients (values). 
+During training <b>OBELISK will adapt its receptive field to the given problem</b> in a completely data-driven manner and thus automatically solve many tuning steps that are usually done by 'network engineering'. The OBELISK layers have <b>substantially fewer trainable parameters</b> than conventional CNNs used in 3D U-Nets and perform often better for medical segmentation tasks (see Table below).
 
 The working principle (and the basis of its implementation) are visualised below. The idea is to replace the im2col operator heavily used in matrix-multiplication based convolution in many DL frameworks with a continuous off-grid grid_sample operator (available for 3D since pytorch v0.4). Please also have a look at https://petewarden.com/2015/04/20/why-gemm-is-at-the-heart-of-deep-learning/ if you're not familiar with im2col. 
 
@@ -37,3 +40,7 @@ which should return 0.783 and a visual segmentation like below
 <img src="images/itk_snapshot_pancreas_ct1.png" alt="ITK visualisation of automatic segmentation"/>
 
 - you can later train your own models using the train.py function by providing the respective datafolders 
+
+Visual Overlay and Table from MEDIA preprint, demonstrating results on TCIA
+
+<img src="images/figuretable_preprint.png" alt="Visual Overlay and Table from MEDIA preprint"/>
