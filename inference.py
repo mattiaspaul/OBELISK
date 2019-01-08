@@ -73,6 +73,10 @@ def main():
             net = obeliskhybrid_visceral(8,full_res) #has 7 anatomical foreground labels
             net.load_state_dict(torch.load(d_options['model']))
             load_successful = True
+        if(modelname=='obelisk'):
+            net = obelisk_visceral(8,full_res) #has 7 anatomical foreground labels
+            net.load_state_dict(torch.load(d_options['model']))
+            load_successful = True
         if(modelname=='allconvunet'):
             net = allconvunet_visceral() #has 7 anatomical foreground labels
             net.load_state_dict(torch.load(d_options['model']))
@@ -109,7 +113,7 @@ def main():
         seg_val =  torch.from_numpy(nib.load(d_options['groundtruth']).get_data()).long().unsqueeze(0)
         dice = dice_coeff(argmax.cpu(), seg_val, predict.size(1)).numpy()
         np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
-        print('Dice validation:',dice)
+        print('Dice validation:',dice,'Avg.','%0.3f'%(dice.mean()))
 
         
 
