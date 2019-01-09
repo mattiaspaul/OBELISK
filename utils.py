@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+import sys
 
 def init_weights(m):
     if isinstance(m, nn.Linear) or isinstance(m, nn.Conv3d) or isinstance(m, nn.ConvTranspose3d):
@@ -74,3 +77,21 @@ def dice_coeff(outputs, labels, max_label):
         intersection = (iflat * tflat).sum()
         dice[label_num-1] = (2. * intersection) / (iflat.sum() + tflat.sum())
     return dice
+
+
+class Logger(object):
+    def __init__(self, resultFilePath):
+        self.terminal = sys.stdout
+        self.log = open(resultFilePath, "w")
+        self.resultFilePath = resultFilePath
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)
+
+    def flush(self):
+        pass
+
+    def saveCurrentResults(self):
+        self.log.close()
+        self.log = open(self.resultFilePath, 'a')
