@@ -13,7 +13,7 @@ During training <b>OBELISK will adapt its receptive field to the given problem</
 
 The working principle (and the basis of its implementation) are visualised below. The idea is to replace the im2col operator heavily used in matrix-multiplication based convolution in many DL frameworks with a continuous off-grid grid_sample operator (available for 3D since pytorch v0.4). Please also have a look at https://petewarden.com/2015/04/20/why-gemm-is-at-the-heart-of-deep-learning/ if you're not familiar with im2col. 
 
-<img src="images/obelisk_explanation_slide_github.png" alt="Overview"/>
+<img src="images/obelisk_explanation_slide_github_new.png" alt="Overview"/>
 
 You will find many more details in the upcoming MEDIA paper
 or for now in the original MIDL version: https://openreview.net/forum?id=BkZu9wooz
